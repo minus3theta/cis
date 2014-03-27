@@ -1,4 +1,4 @@
 cis
 ===
 
-scheme interpriter with C
+scheme interpriter with C++
