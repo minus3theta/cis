@@ -30,25 +30,29 @@ public:
 };
 
 void obj::show() {
-    cout << "type: " << type << endl;
-    cout << "value: ";
-    if(type == DATA_SYMBOL || type == DATA_STRING) {
-        cout << d.s << endl;
-    } else if(type == DATA_CONS) {
+    switch(type) {
+    case DATA_STRING:
+        cout << "*\"" << d.s << '"';
+        break;
+    case DATA_SYMBOL:
+        cout << d.s;
+        break;
+    case DATA_CONS:
         if(d.c) {
             d.c->show();
         } else {
-            cout << "EMPTY_LIST" << endl;
+            cout << " ";
         }
+        break;
     }
 }
 
 void cons::show() {
-    cout << "car: ";
+    cout << "(";
     car->show();
-    cout << "cdr: ";
+    cout << ".";
     cdr->show();
-    cout << endl;
+    cout << ")";
 }
 
 static cons *EMPTY_LIST = NULL;
@@ -58,19 +62,46 @@ obj *analize(const char *str, int &start);
 obj *getPrimitive(const char *str, int &start) {
     obj *ret = new obj();
     const char *s = str + start;
+    int length = 0;
+    const char *p;
     if(*s == '"') {
         ret->type = DATA_STRING;
         s++;
         start++;
+        p = s;
+        for(; *s && *s!='"'; s++) {
+            length++;
+        }
+        start += length;
+        while(*s && (*s == ' ' || *s == '"')) {
+            s++;
+            start++;
+        }
     } else {
         ret->type = DATA_SYMBOL;
+        p = s;
+        for(; *s && *s!=' ' && *s!=')'; s++) {
+            length++;
+        }
+        start += length;
+        while(*s && *s == ' ') {
+            s++;
+            start++;
+        }
     }
+    ret->d.s = new char[length+1];
+    for(int i=0; i<length; i++) {
+        ret->d.s[i] = p[i];
+    }
+    ret->d.s[length] = '\0';
+    /*
     int length = 0;
     const char *p = s;
     for(; *s && *s!=' ' && *s!=')'; s++) {
         length++;
     }
-    start += length + 1;
+    start += length;
+    while(*s && *s == ' ') start++;
     if(ret->type == DATA_STRING) {
         length--;
     }
@@ -79,7 +110,7 @@ obj *getPrimitive(const char *str, int &start) {
         ret->d.s[i] = p[i];
     }
     ret->d.s[length] = '\0';
-    cout << ret->d.s << endl;
+    */
     return ret;
 }
 
@@ -88,6 +119,7 @@ obj *getList(const char *str, int &start) {
     ret->type = DATA_CONS;
     if(!str[start] || str[start] == ')') {
         ret->d.c = EMPTY_LIST;
+        start++;
         return ret;
     }
     ret->d.c = new cons();
@@ -97,7 +129,7 @@ obj *getList(const char *str, int &start) {
 }
 
 obj *analize(const char *str, int &start) {
-    while(!str[start] && str[start] == ' ') start++;
+    while(!str[start] || str[start] == ' ') start++;
     if(str[start] == '(') {
         return getList(str, ++start);
     } else {
@@ -107,9 +139,10 @@ obj *analize(const char *str, int &start) {
     
 
 int main() {
-    char str[100] = "(foo (bar) baz)";
+    char str[100] = "((\"(foo bar)\" hoge) baz)";
     int start = 0;
     obj *exp = analize(str, start);
     exp->show();
+    cout << endl;
     return 0;
 }
