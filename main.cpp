@@ -1,5 +1,4 @@
 #include <iostream>
-#include <stack>
 using namespace std;
 
 class cons;
@@ -24,16 +23,18 @@ public:
     obj();
     obj(int t, char *str);
     obj(obj *car, obj *cdr);
+    ~obj();
     void show();
 };
 
-static obj *EMPTY_LIST = new obj();
+obj *EMPTY_LIST = new obj();
 
 class cons {
     obj *car;
     obj *cdr;
 public:
     cons(obj *car, obj *cdr);
+    ~cons();
     void show();
 };
 
@@ -53,6 +54,14 @@ obj::obj(int t, char *str) {
 obj::obj(obj *car, obj *cdr) {
     type = DATA_CONS;
     d.c = new cons(car, cdr);
+}
+
+obj::~obj() {
+    if(type == DATA_CONS) {
+        delete d.c;
+    } else if(type == DATA_SYMBOL || type == DATA_STRING) {
+        delete d.s;
+    }
 }
 
 void obj::show() {
@@ -76,6 +85,11 @@ void obj::show() {
 cons::cons(obj *car, obj *cdr) {
     this->car = car;
     this->cdr = cdr;
+}
+
+cons::~cons() {
+    delete car;
+    delete cdr;
 }
 
 void cons::show() {
