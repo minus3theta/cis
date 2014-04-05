@@ -15,22 +15,31 @@ const int DATA_INT = 1;
 const int DATA_SYMBOL = 2;
 const int DATA_STRING = 3;
 const int DATA_CONS = 4;
+const int DATA_EMPTY_LIST = 100;
 
 class obj {
-public:
     int type;
     data d;
+public:
+    obj();
     obj(int t, char *str);
-    obj(cons *car, cons *cdr);
+    obj(obj *car, obj *cdr);
     void show();
 };
 
+static obj *EMPTY_LIST = new obj();
+
 class cons {
-public:
     obj *car;
     obj *cdr;
+public:
+    cons(obj *car, obj *cdr);
     void show();
 };
+
+obj::obj() {
+    type = DATA_EMPTY_LIST;
+}
 
 obj::obj(int t, char *str) {
     if(t == DATA_STRING || t == DATA_SYMBOL) {
@@ -41,13 +50,16 @@ obj::obj(int t, char *str) {
     }
 }
 
-obj::obj(cons *car, cons *cdr) {
+obj::obj(obj *car, obj *cdr) {
     type = DATA_CONS;
-    d.car = car;
-    d.cdr = cdr;
+    d.c = new cons(car, cdr);
 }
 
 void obj::show() {
+    if(this == EMPTY_LIST) {
+        cout << " ";
+        return;
+    }
     switch(type) {
     case DATA_STRING:
         cout << "*\"" << d.s << '"';
@@ -56,13 +68,14 @@ void obj::show() {
         cout << d.s;
         break;
     case DATA_CONS:
-        if(d.c) {
-            d.c->show();
-        } else {
-            cout << " ";
-        }
+        d.c->show();
         break;
     }
+}
+
+cons::cons(obj *car, obj *cdr) {
+    this->car = car;
+    this->cdr = cdr;
 }
 
 void cons::show() {
@@ -73,17 +86,15 @@ void cons::show() {
     cout << ")";
 }
 
-static cons *EMPTY_LIST = NULL;
-
 obj *analize(const char *str, int &start);
 
 obj *getPrimitive(const char *str, int &start) {
-    obj *ret = new obj();
+    int type;
     const char *s = str + start;
     int length = 0;
     const char *p;
     if(*s == '"') {
-        ret->type = DATA_STRING;
+        type = DATA_STRING;
         s++;
         start++;
         p = s;
@@ -96,7 +107,7 @@ obj *getPrimitive(const char *str, int &start) {
             start++;
         }
     } else {
-        ret->type = DATA_SYMBOL;
+        type = DATA_SYMBOL;
         p = s;
         for(; *s && *s!=' ' && *s!=')'; s++) {
             length++;
@@ -107,43 +118,20 @@ obj *getPrimitive(const char *str, int &start) {
             start++;
         }
     }
-    ret->d.s = new char[length+1];
+    char *q = new char[length+1];
     for(int i=0; i<length; i++) {
-        ret->d.s[i] = p[i];
+        q[i] = p[i];
     }
-    ret->d.s[length] = '\0';
-    /*
-    int length = 0;
-    const char *p = s;
-    for(; *s && *s!=' ' && *s!=')'; s++) {
-        length++;
-    }
-    start += length;
-    while(*s && *s == ' ') start++;
-    if(ret->type == DATA_STRING) {
-        length--;
-    }
-    ret->d.s = new char[length+1];
-    for(int i=0; i<length; i++) {
-        ret->d.s[i] = p[i];
-    }
-    ret->d.s[length] = '\0';
-    */
-    return ret;
+    q[length] = '\0';
+    return new obj(type, q);
 }
 
 obj *getList(const char *str, int &start) {
-    obj *ret = new obj();
-    ret->type = DATA_CONS;
     if(!str[start] || str[start] == ')') {
-        ret->d.c = EMPTY_LIST;
         start++;
-        return ret;
+        return EMPTY_LIST;
     }
-    ret->d.c = new cons();
-    ret->d.c->car = analize(str, start);
-    ret->d.c->cdr = getList(str, start);
-    return ret;
+    return new obj(analize(str, start), getList(str, start));
 }
 
 obj *analize(const char *str, int &start) {
