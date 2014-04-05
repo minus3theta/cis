@@ -10,6 +10,7 @@ union data {
     cons *c;
 };
 
+const int DATA_INVALID = 0;
 const int DATA_INT = 1;
 const int DATA_SYMBOL = 2;
 const int DATA_STRING = 3;
@@ -19,6 +20,8 @@ class obj {
 public:
     int type;
     data d;
+    obj(int t, char *str);
+    obj(cons *car, cons *cdr);
     void show();
 };
 
@@ -28,6 +31,21 @@ public:
     obj *cdr;
     void show();
 };
+
+obj::obj(int t, char *str) {
+    if(t == DATA_STRING || t == DATA_SYMBOL) {
+        type = t;
+        d.s = str;
+    } else {
+        type = DATA_INVALID;
+    }
+}
+
+obj::obj(cons *car, cons *cdr) {
+    type = DATA_CONS;
+    d.car = car;
+    d.cdr = cdr;
+}
 
 void obj::show() {
     switch(type) {
